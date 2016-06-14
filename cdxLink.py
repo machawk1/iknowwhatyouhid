@@ -10,7 +10,7 @@ import argparse
 #  cdx server, and spits out temporally ordered URI-Ms with corresponding status codes
 
 filenameFullOfLinks = 'testURIs.txt'
-CPUs = 8
+CPUs = 32
 UK = True # False for Canada
 
 # UK start date (default)
