@@ -41,8 +41,10 @@ def getMementosWorker(lineContent):
   
   for idx,uri in enumerate(linksAry):
     uri = 'http://web.archive.org/cdx/search/cdx?url={0}&from={1}&to={2}'.format(uri, startDate, endDate)
-
-    resp = requests.get(uri)
+    
+    
+    headers = {'Accept-Datetime': datetime}
+    resp = requests.get(uri, headers=headers)
     cdxData = resp.content.strip().split('\n')
   
     buff = ''
