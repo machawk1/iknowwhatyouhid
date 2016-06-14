@@ -1,0 +1,8 @@
+argparse==1.2.1
+idna==2.1
+requests==2.10.0
+requests-file==1.4
+six==1.10.0
+surt==0.3.0
+tldextract==2.0.1
+wsgiref==0.1.2
