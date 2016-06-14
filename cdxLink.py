@@ -6,12 +6,15 @@ from surt import surt
 from multiprocessing.dummy import Pool as ThreadPool 
 import argparse
 
+# Input CSV
+#handle,tweetId,links...
+
 # Reads a text file consisting of LF'd URI-Rs from Tweets, fetches the mementos from IA's 
 #  cdx server, and spits out temporally ordered URI-Ms with corresponding status codes
 
 filenameFullOfLinks = 'testURIs.txt'
 CPUs = 32
-UK = True # False for Canada
+UK = False # False for Canada
 
 # UK start date (default)
 CANstartDate = '2015080300000'
@@ -30,24 +33,30 @@ if not UK:
 
 # Threaded fetch process that spits out URI-Ms and corresponding status codes for each 
 #  URI-R passed in within a date range
-def getMementosWorker(uri):
-  uri = 'http://web.archive.org/cdx/search/cdx?url={0}&from={1}&to={2}'.format(uri, startDate, endDate)
-
-  resp = requests.get(uri)
-  cdxData = resp.content.strip().split('\n')
+def getMementosWorker(lineContent):
+  if len(lineContent.strip()) == 0:
+    return
+  (handle,tweetId,links) = lineContent.split(',',2)
+  linksAry = links.split(';')
   
-  buff = ''
+  for idx,uri in enumerate(linksAry):
+    uri = 'http://web.archive.org/cdx/search/cdx?url={0}&from={1}&to={2}'.format(uri, startDate, endDate)
+
+    resp = requests.get(uri)
+    cdxData = resp.content.strip().split('\n')
   
-  for idx, cdxLine in enumerate(cdxData):
-    if len(cdxLine) == 0:
-      break;
+    buff = ''
+  
+    for idx, cdxLine in enumerate(cdxData):
+      if len(cdxLine) == 0:
+        break;
 
-    cdxFields = cdxLine.split(' ')
+      cdxFields = cdxLine.split(' ')
 
-    httpStatus = cdxFields[4]
-    urim = 'http://web.archive.org/web/{0}/{1}'.format(cdxFields[1], cdxFields[2])
-    buff += "{0} {1}\n".format(urim, httpStatus)
-  print buff
+      httpStatus = cdxFields[4]
+      urim = 'http://web.archive.org/web/{0}/{1}'.format(cdxFields[1], cdxFields[2])
+      buff += "{0} {1}\n".format(urim, httpStatus)
+    print buff
 
 def main():
   global CPUs
@@ -55,7 +64,7 @@ def main():
   
   parser = argparse.ArgumentParser(description='Task 4, read URIs, fetch mementos\nExample: $ python uk ./path/to/urlsFile.txt scriptName.py')
   parser.add_argument('filePath', help="Path to the file with URIs")
-  parser.add_argument('-o', '--outfile', help='Path for the output, otherwise stdout')
+  #parser.add_argument('-o', '--outfile', help='Path for the output, otherwise stdout')
   aargs = parser.parse_args()
   
   country = "Canada"
@@ -64,10 +73,10 @@ def main():
     print "--------------------\nProcessing {0} results for {1}-{2}\n--------------------\n".format(country,startDate,endDate)
   
   with open(aargs.filePath, 'r') as linksFile:
-    urls = linksFile.read().split('\n')
+    lines = linksFile.read().split('\n')
     
     pool = ThreadPool(CPUs)
-    results = pool.map(getMementosWorker, urls)
+    results = pool.map(getMementosWorker, lines)
     pool.close() 
     pool.join() 
     
