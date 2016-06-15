@@ -5,6 +5,7 @@ import sys
 from surt import surt
 from multiprocessing.dummy import Pool as ThreadPool 
 import argparse
+import json
 
 # Input CSV
 #handle,tweetId,links...
@@ -13,8 +14,8 @@ import argparse
 #  cdx server, and spits out temporally ordered URI-Ms with corresponding status codes
 
 filenameFullOfLinks = 'testURIs.txt'
-CPUs = 32
-UK = False # False for Canada
+CPUs = 1
+UK = True # False for Canada
 
 # UK start date (default)
 CANstartDate = '2015080300000'
@@ -34,17 +35,38 @@ if not UK:
 # Threaded fetch process that spits out URI-Ms and corresponding status codes for each 
 #  URI-R passed in within a date range
 def getMementosWorker(lineContent):
+  print lineContent
   if len(lineContent.strip()) == 0:
     return
+  print json.loads(lineContent)
+  sys.exit()
   (handle,tweetId,links) = lineContent.split(',',2)
   linksAry = links.split(';')
   
+  if len(linksAry) == 0:
+    return; # No links found in the line
+  
   for idx,uri in enumerate(linksAry):
+    # Expand URI for t.co's
+    if len(uri) == 0:
+     continue
+
+    print uri
+    try:
+      tcoResponse = requests.get(uri.strip())
+      uri = tcoResponse.url
+      print 'Successfully followed to '
+      print uri
+    except requests.exceptions.RequestException as e:
+      print "error"
+      print e
+      sys.exit()  
+  
     uri = 'http://web.archive.org/cdx/search/cdx?url={0}&from={1}&to={2}'.format(uri, startDate, endDate)
     
     
-    headers = {'Accept-Datetime': datetime}
-    resp = requests.get(uri, headers=headers)
+    #headers = {'Accept-Datetime': datetime}
+    resp = requests.get(uri)#, headers=headers)
     cdxData = resp.content.strip().split('\n')
   
     buff = ''
